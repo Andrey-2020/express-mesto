@@ -45,14 +45,15 @@ module.exports.getUsers = (req, res) => {
       if (!users) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      const {
-        name, about, avatar, _id,
-      } = users;
-      return res.send({
-        data: {
+      const newUsers = users.map((user) => {
+        const {
           name, about, avatar, _id,
-        },
+        } = user;
+        return {
+          name, about, avatar, _id,
+        };
       });
+      return res.send(newUsers);
     })
     .catch((err) => res.status(500).send({ message: err.message }));
 };

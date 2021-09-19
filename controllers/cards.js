@@ -46,12 +46,15 @@ module.exports.getCards = (req, res) => {
       if (!cards) {
         return res.status(404).send({ message: 'Карточки не найдены.' });
       }
-      const {
-        name, link, likes, _id, owner, createdAt,
-      } = cards;
-      return res.send([{
-        likes, _id, name, link, owner, createdAt,
-      }]);
+      const newCards = cards.map((card) => {
+        const {
+          name, link, likes, _id, owner, createdAt,
+        } = card;
+        return {
+          likes, _id, name, link, owner, createdAt,
+        };
+      });
+      return res.send(newCards);
     })
     .catch((err) => res.status(500).send({ message: err.message }));
 };
