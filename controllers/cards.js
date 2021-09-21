@@ -6,9 +6,7 @@ module.exports.createCard = (req, res) => {
     name, link, owner: req.user._id, likes,
   })
     .then((card) => {
-      res.status(201).send({
-        likes, _id: card._id, name, link, owner: card.owner, createdAt: card.createdAt,
-      });
+      res.status(201).send(card);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -27,14 +25,7 @@ module.exports.deleteCards = (req, res) => {
       if (!card) {
         return res.status(404).send({ message: 'Карточка не найдена.' });
       }
-      return res.status(200).send({
-        likes: card.likes,
-        _id: card._id,
-        name: card.name,
-        link: card.link,
-        owner: card.owner,
-        createdAt: card.createdAt,
-      });
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -53,15 +44,7 @@ module.exports.getCards = (req, res) => {
       if (!cards.length) {
         return res.status(404).send({ message: 'Карточки не найдены.' });
       }
-      const newCards = cards.map((card) => ({
-        likes: card.likes,
-        _id: card._id,
-        name: card.name,
-        link: card.link,
-        owner: card.owner,
-        createdAt: card.createdAt,
-      }));
-      return res.status(200).send(newCards);
+      return res.status(200).send(cards);
     })
     .catch((err) => res.status(500).send({ message: err.message }));
 };
@@ -75,14 +58,7 @@ module.exports.likeCard = (req, res) => {
       if (!card) {
         return res.status(404).send({ message: 'Карточка не найдена.' });
       }
-      return res.status(200).send({
-        likes: card.likes,
-        _id: card._id,
-        name: card.name,
-        link: card.link,
-        owner: card.owner,
-        createdAt: card.createdAt,
-      });
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -103,14 +79,7 @@ module.exports.dislikeCard = (req, res) => {
       if (!card) {
         return res.status(404).send({ message: 'Карточка не найдена.' });
       }
-      return res.status(200).send({
-        likes: card.likes,
-        _id: card._id,
-        name: card.name,
-        link: card.link,
-        owner: card.owner,
-        createdAt: card.createdAt,
-      });
+      return res.status(200).send(card);
     })
     .catch((err) => {
       if (err.name === 'CastError') {

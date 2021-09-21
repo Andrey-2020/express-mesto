@@ -5,9 +5,7 @@ module.exports.createUser = (req, res) => {
 
   User.create({ name, about, avatar })
     .then((user) => {
-      res.status(201).send({
-        name, about, avatar, _id: user._id,
-      });
+      res.status(201).send(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -26,12 +24,7 @@ module.exports.getUser = (req, res) => {
       if (!user) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(200).send({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatart,
-        _id: user._id,
-      });
+      return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -47,16 +40,10 @@ module.exports.getUser = (req, res) => {
 module.exports.getUsers = (req, res) => {
   User.find({})
     .then((users) => {
-      if (!users) {
-        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+      if (!users.length) {
+        return res.status(404).send({ message: 'Массив пользователей не найден' });
       }
-      const newUsers = users.map((user) => ({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        _id: user._id,
-      }));
-      return res.send(newUsers);
+      return res.send(users);
     })
     .catch((err) => res.status(500).send({ message: err.message }));
 };
@@ -71,15 +58,10 @@ module.exports.updateUser = (req, res) => {
       if (!user) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(200).send({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        _id: user._id,
-      });
+      return res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
         res.status(400).send({
           message: err.message,
         });
@@ -89,7 +71,7 @@ module.exports.updateUser = (req, res) => {
     });
 };
 module.exports.updateAvatar = (req, res) => {
-  User.findByIdAndUpdate(req.user._id, { avatar: req.params.avatar }, {
+  User.findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, {
     new: true,
     runValidators: true,
   })
@@ -97,15 +79,10 @@ module.exports.updateAvatar = (req, res) => {
       if (!user) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(200).send({
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        _id: user._id,
-      });
+      return res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err.name === 'CastError' || err.name === 'ValidationError') {
         res.status(400).send({
           message: err.message,
         });
