@@ -11,8 +11,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
-app.use('/users', require('./routes/users'));
-
 app.use((req, res, next) => {
   req.user = {
     _id: '61474b2d92f8c0fa67ae81a4', // вставьте сюда _id созданного в предыдущем пункте пользователя
@@ -20,6 +18,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use('/users', require('./routes/users'));
 
 app.use('/cards', require('./routes/cards'));
 // app.use(express.static(path.join(__dirname, 'public')));

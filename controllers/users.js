@@ -5,17 +5,14 @@ module.exports.createUser = (req, res) => {
 
   User.create({ name, about, avatar })
     .then((user) => {
-      const { _id } = user;
       res.status(201).send({
-        name, about, avatar, _id,
+        name, about, avatar, _id: user._id,
       });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
         res.status(400).send({
-          message: `${Object.values(err.errors)
-            .map((error) => error.message)
-            .join(', ')}`,
+          message: err.message,
         });
       } else {
         res.status(500).send({ message: err.message });
@@ -29,14 +26,22 @@ module.exports.getUser = (req, res) => {
       if (!user) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      const {
-        name, about, avatar, _id,
-      } = user;
-      return res.send({
-        name, about, avatar, _id,
+      return res.status(200).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatart,
+        _id: user._id,
       });
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(400).send({
+          message: err.message,
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
 
 module.exports.getUsers = (req, res) => {
@@ -45,14 +50,12 @@ module.exports.getUsers = (req, res) => {
       if (!users) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      const newUsers = users.map((user) => {
-        const {
-          name, about, avatar, _id,
-        } = user;
-        return {
-          name, about, avatar, _id,
-        };
-      });
+      const newUsers = users.map((user) => ({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        _id: user._id,
+      }));
       return res.send(newUsers);
     })
     .catch((err) => res.status(500).send({ message: err.message }));
@@ -68,14 +71,22 @@ module.exports.updateUser = (req, res) => {
       if (!user) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      const {
-        avatar, _id,
-      } = user;
-      return res.send({
-        name, about, avatar, _id,
+      return res.status(200).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        _id: user._id,
       });
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(400).send({
+          message: err.message,
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
 module.exports.updateAvatar = (req, res) => {
   User.findByIdAndUpdate(req.user._id, { avatar: req.params.avatar }, {
@@ -86,12 +97,20 @@ module.exports.updateAvatar = (req, res) => {
       if (!user) {
         return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      const {
-        name, about, avatar, _id,
-      } = user;
-      return res.send({
-        name, about, avatar, _id,
+      return res.status(200).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        _id: user._id,
       });
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        res.status(400).send({
+          message: err.message,
+        });
+      } else {
+        res.status(500).send({ message: err.message });
+      }
+    });
 };
