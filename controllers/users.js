@@ -1,6 +1,13 @@
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const NotFoundError = require('../errors/not-found-err');
+const BadRequestError = require('../errors/bad-request-err');
+const UnauthorizedError = require('../errors/unauthorized-err');
+const Conflict = require('../errors/conflict-err');
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const { name, about, avatar } = req.body;
 
   User.create({ name, about, avatar })
@@ -9,46 +16,62 @@ module.exports.createUser = (req, res) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: err.message,
-        });
+        next(new BadRequestError(err.message));
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
     });
 };
 
-module.exports.getUser = (req, res) => {
+module.exports.getUser = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        throw new NotFoundError('Запрашиваемый пользователь не найден.');
       }
       return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({
-          message: err.message,
-        });
+        next(new BadRequestError(err.message));
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
     });
 };
 
-module.exports.getUsers = (req, res) => {
+module.exports.getMeUser = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        throw new NotFoundError('Запрашиваемый пользователь не найден.');
+      }
+      return res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError(err.message));
+      } else {
+        next(err);
+      }
+    });
+};
+
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => {
       if (!users.length) {
-        return res.status(404).send({ message: 'Массив пользователей не найден' });
+        // return res.status(404).send({ message: 'Массив пользователей не найден' });
+        throw new NotFoundError('Массив пользователей не найден.');
       }
       return res.send(users);
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => next(err));
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
   User.findByIdAndUpdate(req.user._id, { name, about }, {
     new: true, // обработчик then получит на вход обновлённую запись
@@ -56,38 +79,77 @@ module.exports.updateUser = (req, res) => {
   })
     .then((user) => {
       if (!user) {
-        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
       return res.status(200).send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({
-          message: err.message,
-        });
+        next(new BadRequestError(err.message));
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
     });
 };
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   User.findByIdAndUpdate(req.user._id, { avatar: req.body.avatar }, {
     new: true,
     runValidators: true,
   })
     .then((user) => {
       if (!user) {
-        return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
+        throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
       return res.send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError' || err.name === 'ValidationError') {
-        res.status(400).send({
-          message: err.message,
-        });
+        next(new BadRequestError(err.message));
       } else {
-        res.status(500).send({ message: err.message });
+        next(err);
       }
+    });
+};
+
+module.exports.createUser = (req, res, next) => {
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => {
+      if (!validator.isEmail(req.body.email)) {
+        throw new BadRequestError('Пожалуйста, введите правильный адрес электронной почты');
+      }
+      return User.create({
+        name: req.body.name,
+        about: req.body.about,
+        avatar: req.body.avatar,
+        email: req.body.email,
+        password: hash, // записываем хеш в базу
+      });
+    })
+    .then((user) => res.status(201).send(user))
+    .catch((err) => {
+      if (err.name === 'MongoServerError' && err.code === 11000) {
+        next(new Conflict(err.message));
+      }
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError(err.message));
+      } else {
+        next(err);
+      }
+    });
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key');
+      res.send({ token });
+    })
+    .catch((err) => {
+      // ошибка аутентификации UnauthorizedError
+      next(new UnauthorizedError(err.message));
     });
 };
