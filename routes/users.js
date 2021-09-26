@@ -4,12 +4,7 @@ const {
   getMeUser, getUser, getUsers, updateUser, updateAvatar,
 } = require('../controllers/users');
 
-router.get('/', celebrate({
-  // валидируем параметры
-  headers: Joi.object().keys({
-    authorization: Joi.string().required().regex(/Bearer\s\w{1,}\.{0,}/),
-  }).unknown(true),
-}), getUsers);
+router.get('/', getUsers);
 
 router.get('/me', celebrate({
   // валидируем параметры
@@ -19,9 +14,9 @@ router.get('/me', celebrate({
 }), getMeUser);
 
 router.get('/:userId', celebrate({
-  headers: Joi.object().keys({
-    authorization: Joi.string().required().regex(/Bearer\s\w{1,}\.{0,}/),
-  }).unknown(true),
+  params: Joi.object().keys({
+    cardId: Joi.string().length(24).hex(),
+  }),
 }), getUser);
 
 router.patch('/me', celebrate({
@@ -29,18 +24,12 @@ router.patch('/me', celebrate({
     name: Joi.string().required().min(2).max(30),
     about: Joi.string().required(),
   }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().required().regex(/Bearer\s\w{1,}\.{0,}/),
-  }).unknown(true),
 }), updateUser);
 
 router.patch('/me/avatar', celebrate({
   body: Joi.object().keys({
     avatar: Joi.string().required().min(2).regex(/https?:\/\/\S{0,}.{0,1}\/{0,}#?/),
   }),
-  headers: Joi.object().keys({
-    authorization: Joi.string().required().regex(/Bearer\s\w{1,}\.{0,}/),
-  }).unknown(true),
 }), updateAvatar);
 
 module.exports = router;

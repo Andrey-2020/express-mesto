@@ -1,33 +1,17 @@
 const bcrypt = require('bcryptjs');
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 const User = require('../models/user');
 const NotFoundError = require('../errors/not-found-err');
 const BadRequestError = require('../errors/bad-request-err');
 const UnauthorizedError = require('../errors/unauthorized-err');
 const Conflict = require('../errors/conflict-err');
 
-module.exports.createUser = (req, res, next) => {
-  const { name, about, avatar } = req.body;
-
-  User.create({ name, about, avatar })
-    .then((user) => {
-      res.status(201).send(user);
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError(err.message));
-      } else {
-        next(err);
-      }
-    });
-};
-
 module.exports.getUser = (req, res, next) => {
   User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
         throw new NotFoundError('Запрашиваемый пользователь не найден.');
       }
       return res.status(200).send(user);
@@ -45,7 +29,6 @@ module.exports.getMeUser = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
       if (!user) {
-        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
         throw new NotFoundError('Запрашиваемый пользователь не найден.');
       }
       return res.status(200).send(user);
@@ -61,13 +44,7 @@ module.exports.getMeUser = (req, res, next) => {
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => {
-      if (!users.length) {
-        // return res.status(404).send({ message: 'Массив пользователей не найден' });
-        throw new NotFoundError('Массив пользователей не найден.');
-      }
-      return res.send(users);
-    })
+    .then((users) => res.send(users))
     .catch((err) => next(err));
 };
 
@@ -79,7 +56,6 @@ module.exports.updateUser = (req, res, next) => {
   })
     .then((user) => {
       if (!user) {
-        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
         throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
       return res.status(200).send(user);
@@ -99,7 +75,6 @@ module.exports.updateAvatar = (req, res, next) => {
   })
     .then((user) => {
       if (!user) {
-        // return res.status(404).send({ message: 'Запрашиваемый пользователь не найден' });
         throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
       return res.send(user);
@@ -127,7 +102,16 @@ module.exports.createUser = (req, res, next) => {
         password: hash, // записываем хеш в базу
       });
     })
-    .then((user) => res.status(201).send(user))
+    .then((user) => {
+      const {
+        name, about, avatar, email,
+      } = user;
+      res.status(200).send({
+        data: {
+          name, about, avatar, email,
+        },
+      });
+    })
     .catch((err) => {
       if (err.name === 'MongoServerError' && err.code === 11000) {
         next(new Conflict(err.message));
@@ -142,10 +126,10 @@ module.exports.createUser = (req, res, next) => {
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-
+  const { NODE_ENV, JWT_SECRET } = process.env;
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key');
+      const token = jwt.sign({ _id: user._id }, NODE_ENV === 'production' ? JWT_SECRET : 'some-secret-key');
       res.send({ token });
     })
     .catch((err) => {

@@ -20,12 +20,20 @@ const userSchema = new mongoose.Schema({
   avatar: { // у пользователя есть имя — опишем требования к имени в схеме:
     type: String,
     required: false,
+    validate: {
+      validator: (v) => validator.isURL(v),
+      message: 'avatar validation failed',
+    },
     default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
   },
   email: {
     type: String,
     required: true,
     unique: true,
+    validate: {
+      validator: (v) => validator.isEmail(v),
+      message: 'email validation failed',
+    },
   },
   password: {
     type: String,

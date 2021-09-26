@@ -1,8 +1,9 @@
-// const path = require('path');
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-const { errors } = require('celebrate');
+const { celebrate, Joi, errors } = require('celebrate');
+const NotFoundError = require('./errors/not-found-err');
 const auth = require('./middlewares/auth');
 const {
   createUser, login,
@@ -16,12 +17,27 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 mongoose.connect('mongodb://localhost:27017/mestodb');
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().min(2),
+    password: Joi.string().required().min(2),
+  }),
+}), login);
+
+app.post('/signup', celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().required().min(2),
+    password: Joi.string().required().min(2),
+  }),
+}), createUser);
 app.use(auth);
 app.use('/users', require('./routes/users'));
 
 app.use('/cards', require('./routes/cards'));
+
+app.use((req, res, next) => {
+  next(new NotFoundError('Маршрут не найден'));
+});
 
 app.use(errors()); // обработчик ошибок celebrate
 // eslint-disable-next-line no-unused-vars
