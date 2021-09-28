@@ -6,16 +6,11 @@ const {
 
 router.get('/', getUsers);
 
-router.get('/me', celebrate({
-  // валидируем параметры
-  headers: Joi.object().keys({
-    authorization: Joi.string().required().regex(/Bearer\s\w{1,}\.{0,}/),
-  }).unknown(true),
-}), getMeUser);
+router.get('/me', getMeUser);
 
 router.get('/:userId', celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().length(24).hex(),
+    cardId: Joi.string().length(24).hex().regex(/\w{24}/),
   }),
 }), getUser);
 
@@ -28,7 +23,7 @@ router.patch('/me', celebrate({
 
 router.patch('/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required().min(2).regex(/https?:\/\/\S{0,}.{0,1}\/{0,}#?/),
+    avatar: Joi.string().required().min(2).regex(/https?:\/\/\S{0,}\.\S{0,}\/{0,}#?/),
   }),
 }), updateAvatar);
 
