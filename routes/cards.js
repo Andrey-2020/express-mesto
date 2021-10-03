@@ -1,9 +1,17 @@
 const router = require('express').Router();
 const { celebrate, Joi } = require('celebrate');
+const validator = require('validator');
 const {
   createCard, deleteCards, getCards, likeCard, dislikeCard,
 } = require('../controllers/cards');
 
+const metod = (value) => {
+  const result = validator.isURL(value);
+  if (result) {
+    return value;
+  }
+  throw new Error('Неправильный формат ссылки');
+};
 router.get('/', getCards);
 
 router.delete('/:cardId', celebrate({
@@ -16,7 +24,7 @@ router.delete('/:cardId', celebrate({
 router.post('/', celebrate({
   body: Joi.object().keys({
     name: Joi.string().required().min(2).max(30),
-    link: Joi.string().required().min(2).regex(/https?:\/\/\S{0,}\.\S{0,}\/{0,}#?/),
+    link: Joi.string().required().min(2).custom(metod),
   }),
 }), createCard);
 

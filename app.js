@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const validator = require('validator');
 const { celebrate, Joi, errors } = require('celebrate');
 const NotFoundError = require('./errors/not-found-err');
 const auth = require('./middlewares/auth');
@@ -12,6 +13,13 @@ const {
 const { PORT = 3000 } = process.env;
 const app = express();
 
+const metod = (value) => {
+  const result = validator.isURL(value);
+  if (result) {
+    return value;
+  }
+  throw new Error('Неправильный формат ссылки');
+};
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -28,7 +36,7 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2),
-    avatar: Joi.string().min(2).regex(/https?:\/\/\S{0,}\.\S{0,}\/{0,}#?/),
+    avatar: Joi.string().min(2).custom(metod),
     email: Joi.string().required().min(2),
     password: Joi.string().required().min(2),
   }),
